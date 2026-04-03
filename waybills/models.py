@@ -8,6 +8,9 @@ from cargo.models import Cargo
 class Waybill(models.Model):
     number = models.CharField(max_length=50)
     date = models.DateField()
+    loading_date = models.DateField(null=True, blank=True)
+    delivery_date = models.DateField(null=True, blank=True)
+    additional_info = models.TextField(blank=True)
 
     sender = models.ForeignKey(
         Company,
@@ -31,5 +34,5 @@ class Waybill(models.Model):
 class WaybillItem(models.Model):
     waybill = models.ForeignKey(Waybill, on_delete=models.CASCADE)
     cargo = models.ForeignKey(Cargo, on_delete=models.CASCADE)
-    quantity = models.IntegerField()
-    weight = models.FloatField()
+    quantity = models.IntegerField(default=0)
+    weight = models.FloatField(default=0)

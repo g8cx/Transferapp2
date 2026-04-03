@@ -1,10 +1,179 @@
-<h2>Регистрация</h2>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <style>
+        :root {
+            --bg: linear-gradient(140deg, #edf4ff, #f8fbff);
+            --card: #ffffff;
+            --text: #1a3148;
+            --muted: #61768d;
+            --line: #d5dfeb;
+            --accent: #0f766e;
+            --accent-dark: #0b5d57;
+            --danger: #b42318;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+        }
+        .page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .card {
+            width: min(520px, 100%);
+            background: var(--card);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 20px 45px rgba(26, 49, 72, 0.14);
+        }
+        h1 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .lead {
+            margin-top: 0;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+        form {
+            display: grid;
+            gap: 14px;
+            margin-top: 20px;
+        }
+        .field {
+            display: grid;
+            gap: 6px;
+        }
+        label {
+            font-weight: 700;
+        }
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            font-size: 15px;
+        }
+        .button-link,
+        button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 46px;
+            padding: 12px 16px;
+            border: 0;
+            border-radius: 14px;
+            background: var(--accent);
+            color: #fff;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .button-link.secondary {
+            background: #edf3f8;
+            color: var(--text);
+        }
+        button:hover,
+        .button-link:hover {
+            background: var(--accent-dark);
+        }
+        .button-link.secondary:hover {
+            background: #dfe8f1;
+        }
+        .stack {
+            display: grid;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .error-list,
+        .message-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 16px;
+            display: grid;
+            gap: 8px;
+        }
+        .error-list li,
+        .message-list li {
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        .error-list li {
+            background: #fff1f0;
+            color: var(--danger);
+        }
+        .message-list li {
+            background: #e8f7ed;
+            color: #166534;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <section class="card">
+            <h1>Регистрация</h1>
+            <p class="lead">Создайте аккаунт, после чего приложение автоматически переведёт вас на главную страницу.</p>
 
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
+            {% if messages %}
+                <ul class="message-list">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
 
-    <button type="submit">Зарегистрироваться</button>
-</form>
+            {% if form.errors %}
+                <ul class="error-list">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
 
-<a href="/accounts/login/">Войти</a>
+            <form method="post">
+                {% csrf_token %}
+                <div class="field">
+                    {{ form.username.label_tag }}
+                    {{ form.username }}
+                </div>
+                <div class="field">
+                    {{ form.email.label_tag }}
+                    {{ form.email }}
+                </div>
+                <div class="field">
+                    {{ form.password1.label_tag }}
+                    {{ form.password1 }}
+                </div>
+                <div class="field">
+                    {{ form.password2.label_tag }}
+                    {{ form.password2 }}
+                </div>
+                <button type="submit">Зарегистрироваться</button>
+            </form>
+
+            <div class="stack">
+                <a class="button-link secondary" href="{% url 'login' %}">Перейти ко входу</a>
+                <a class="button-link secondary" href="{% url 'auth' %}">Открыть общую страницу входа и регистрации</a>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

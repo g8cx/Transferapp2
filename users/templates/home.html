@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="ru">
+{% load static %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Создание транспортной накладной</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
     <div class="container">
@@ -13,21 +14,38 @@
                 <h1>🚛 Транспортная накладная</h1>
                 <p>Заполните данные о перевозке, добавьте грузы и сформируйте документ для печати</p>
             </div>
-            <div class="badge-area">
-                ⚡ Заполните обязательные поля
+            <div class="badge-area" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <span>⚡ Заполните обязательные поля</span>
+                <a href="{% url 'waybill_list' %}" style="display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 10px 16px; text-decoration: none; background: #edf3f8; color: #17324d; font-weight: 600;">
+                    Просмотр накладных
+                </a>
+                <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" style="border: 0; border-radius: 999px; padding: 10px 16px; cursor: pointer;">Выйти</button>
+                </form>
             </div>
         </div>
 
-        <div class="form-card">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="form-card" style="margin-bottom: 1rem; padding: 1rem 1.2rem;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" class="form-card" id="waybillForm">
+            {% csrf_token %}
+
             <div class="section-title">📄 Основная информация</div>
             <div class="form-grid">
                 <div class="input-field">
                     <label>Номер накладной *</label>
-                    <input type="text" id="waybillNumber" placeholder="Напр. ТН-2404-001">
+                    <input type="text" id="waybillNumber" name="waybill_number" placeholder="Напр. ТН-2404-001" value="{{ request.POST.waybill_number|default:'' }}" required>
                 </div>
                 <div class="input-field">
                     <label>Дата составления *</label>
-                    <input type="date" id="waybillDate">
+                    <input type="date" id="waybillDate" name="waybill_date" value="{{ request.POST.waybill_date|default:'' }}" required>
                 </div>
             </div>
 
@@ -35,19 +53,19 @@
             <div class="form-grid">
                 <div class="input-field">
                     <label>Наименование / ИП *</label>
-                    <input type="text" id="shipperName" placeholder="Например: ООО 'Логистика'">
+                    <input type="text" id="shipperName" name="shipper_name" placeholder="Например: ООО 'Логистика'" value="{{ request.POST.shipper_name|default:'' }}" required>
                 </div>
                 <div class="input-field">
                     <label>ИНН / КПП</label>
-                    <input type="text" id="shipperInn" placeholder="ИНН организации">
+                    <input type="text" id="shipperInn" name="shipper_tax_id" placeholder="ИНН организации" value="{{ request.POST.shipper_tax_id|default:'' }}">
                 </div>
                 <div class="input-field">
                     <label>Адрес отправителя *</label>
-                    <input type="text" id="shipperAddress" placeholder="г. Москва, ул. Примерная, д.1">
+                    <input type="text" id="shipperAddress" name="shipper_address" placeholder="г. Москва, ул. Примерная, д.1" value="{{ request.POST.shipper_address|default:'' }}" required>
                 </div>
                 <div class="input-field">
                     <label>Контактный телефон</label>
-                    <input type="text" id="shipperPhone" placeholder="+7 999 123-45-67">
+                    <input type="text" id="shipperPhone" name="shipper_phone" placeholder="+7 999 123-45-67" value="{{ request.POST.shipper_phone|default:'' }}">
                 </div>
             </div>
 
@@ -55,19 +73,19 @@
             <div class="form-grid">
                 <div class="input-field">
                     <label>Наименование / ИП *</label>
-                    <input type="text" id="consigneeName" placeholder="Например: ООО 'ТоргСервис'">
+                    <input type="text" id="consigneeName" name="consignee_name" placeholder="Например: ООО 'ТоргСервис'" value="{{ request.POST.consignee_name|default:'' }}" required>
                 </div>
                 <div class="input-field">
                     <label>ИНН / КПП</label>
-                    <input type="text" id="consigneeInn" placeholder="ИНН получателя">
+                    <input type="text" id="consigneeInn" name="consignee_tax_id" placeholder="ИНН получателя" value="{{ request.POST.consignee_tax_id|default:'' }}">
                 </div>
                 <div class="input-field">
                     <label>Адрес получателя *</label>
-                    <input type="text" id="consigneeAddress" placeholder="г. Санкт-Петербург, Невский пр., д.10">
+                    <input type="text" id="consigneeAddress" name="consignee_address" placeholder="г. Санкт-Петербург, Невский пр., д.10" value="{{ request.POST.consignee_address|default:'' }}" required>
                 </div>
                 <div class="input-field">
                     <label>Контактный телефон</label>
-                    <input type="text" id="consigneePhone" placeholder="+7 812 333-4455">
+                    <input type="text" id="consigneePhone" name="consignee_phone" placeholder="+7 812 333-4455" value="{{ request.POST.consignee_phone|default:'' }}">
                 </div>
             </div>
 
@@ -75,19 +93,19 @@
             <div class="form-grid">
                 <div class="input-field">
                     <label>Транспортное средство *</label>
-                    <input type="text" id="vehicle" placeholder="Марка, гос. номер">
+                    <input type="text" id="vehicle" name="vehicle_description" placeholder="Марка, гос. номер" value="{{ request.POST.vehicle_description|default:'' }}" required>
                 </div>
                 <div class="input-field">
                     <label>Водитель (ФИО)</label>
-                    <input type="text" id="driver" placeholder="Иванов И.И.">
+                    <input type="text" id="driver" name="driver_name" placeholder="Иванов И.И." value="{{ request.POST.driver_name|default:'' }}">
                 </div>
                 <div class="input-field">
                     <label>Дата погрузки *</label>
-                    <input type="date" id="loadingDate">
+                    <input type="date" id="loadingDate" name="loading_date" value="{{ request.POST.loading_date|default:'' }}" required>
                 </div>
                 <div class="input-field">
                     <label>Плановая дата доставки</label>
-                    <input type="date" id="deliveryDate">
+                    <input type="date" id="deliveryDate" name="delivery_date" value="{{ request.POST.delivery_date|default:'' }}">
                 </div>
             </div>
 
@@ -101,19 +119,20 @@
 
             <div class="input-field" style="margin-top: 0.5rem;">
                 <label>Дополнительная информация / Особые отметки</label>
-                <textarea id="additionalInfo" rows="2" placeholder="Температурный режим, маршрут, примечания..."></textarea>
+                <textarea id="additionalInfo" name="additional_info" rows="2" placeholder="Температурный режим, маршрут, примечания...">{{ request.POST.additional_info|default:'' }}</textarea>
             </div>
 
             <div class="action-buttons">
                 <button type="button" class="btn-outline" id="resetFormBtn">Очистить форму</button>
+                <button type="submit" class="btn-primary" id="saveWaybillBtn">💾 Сохранить в базу</button>
                 <button type="button" class="btn-primary" id="printWaybillBtn">📄 Сформировать и распечатать</button>
-                <button type="button" class="btn-primary" id="">Выгрузить файл в exel</button>
+                <button type="button" class="btn-primary" id="exportExcelBtn">Выгрузить файл в Excel</button>
             </div>
-        </div>
+        </form>
 
-        <footer>Интерфейс для создания транспортных накладных. Все данные локальны. Заполните форму и нажмите кнопку печати.</footer>
+        <footer>Интерфейс для создания транспортных накладных. Данные сохраняются в базе после отправки формы.</footer>
     </div>
 
-    <script src="script.js"></script>
+    <script src="{% static 'js/script.js' %}"></script>
 </body>
 </html>

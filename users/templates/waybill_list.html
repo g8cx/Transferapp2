@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сохраненные накладные</title>
+    <style>
+        :root {
+            --bg: linear-gradient(145deg, #edf5fb, #dce8f5);
+            --card: #ffffff;
+            --text: #17324d;
+            --muted: #60758c;
+            --line: #d8e2ec;
+            --accent: #0f766e;
+            --danger: #b42318;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 28px 20px 40px;
+        }
+        .header,
+        .card {
+            background: var(--card);
+            border-radius: 24px;
+            box-shadow: 0 18px 45px rgba(23, 50, 77, 0.12);
+        }
+        .header {
+            padding: 24px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .card {
+            padding: 22px;
+            margin-bottom: 18px;
+        }
+        h1, h2, h3 {
+            margin-top: 0;
+        }
+        .muted {
+            color: var(--muted);
+        }
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .button-link,
+        button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 10px 16px;
+            border: 0;
+            border-radius: 14px;
+            background: var(--accent);
+            color: #fff;
+            text-decoration: none;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .button-link.secondary {
+            background: #edf3f8;
+            color: var(--text);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin: 18px 0;
+        }
+        .meta {
+            background: #f7fafc;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 14px;
+        }
+        .meta strong {
+            display: block;
+            margin-bottom: 6px;
+        }
+        .cargo-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 14px;
+        }
+        .cargo-table th,
+        .cargo-table td {
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            padding: 10px 8px;
+        }
+        .message-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 16px;
+            display: grid;
+            gap: 8px;
+        }
+        .message-list li {
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: #fff1f0;
+            color: var(--danger);
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <section class="header">
+            <div>
+                <h1>Сохраненные накладные</h1>
+                <p class="muted">Страница доступна пользователю для просмотра уже сохраненных транспортных накладных.</p>
+            </div>
+            <div class="toolbar">
+                {% if user.is_superuser %}
+                    <a class="button-link secondary" href="{% url 'home' %}">На главную</a>
+                {% endif %}
+                <a class="button-link secondary" href="{% url 'export_waybills_csv' %}">Выгрузить все в Excel</a>
+                <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit">Выйти</button>
+                </form>
+            </div>
+        </section>
+
+        {% if messages %}
+            <ul class="message-list">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if waybills %}
+            {% for waybill in waybills %}
+                <section class="card">
+                    <h2>Накладная № {{ waybill.number }}</h2>
+                    <p class="muted">Дата составления: {{ waybill.date }}{% if waybill.loading_date %} | Дата погрузки: {{ waybill.loading_date }}{% endif %}{% if waybill.delivery_date %} | Доставка: {{ waybill.delivery_date }}{% endif %}</p>
+                    <div class="toolbar" style="margin-top: 12px;">
+                        <a class="button-link secondary" href="{% url 'export_waybill_csv' waybill.id %}">Выгрузить накладную в Excel</a>
+                    </div>
+
+                    <div class="grid">
+                        <div class="meta">
+                            <strong>Грузоотправитель</strong>
+                            {{ waybill.sender.name }}<br>
+                            {{ waybill.sender.address }}<br>
+                            {% if waybill.sender.phone %}Тел.: {{ waybill.sender.phone }}<br>{% endif %}
+                            {% if waybill.sender.tax_id %}ИНН/КПП: {{ waybill.sender.tax_id }}{% endif %}
+                        </div>
+                        <div class="meta">
+                            <strong>Грузополучатель</strong>
+                            {{ waybill.receiver.name }}<br>
+                            {{ waybill.receiver.address }}<br>
+                            {% if waybill.receiver.phone %}Тел.: {{ waybill.receiver.phone }}<br>{% endif %}
+                            {% if waybill.receiver.tax_id %}ИНН/КПП: {{ waybill.receiver.tax_id }}{% endif %}
+                        </div>
+                        <div class="meta">
+                            <strong>Транспорт</strong>
+                            {{ waybill.vehicle }}<br>
+                            Водитель: {{ waybill.driver.name }}
+                        </div>
+                    </div>
+
+                    <h3>Грузы</h3>
+                    <table class="cargo-table">
+                        <thead>
+                            <tr>
+                                <th>Наименование</th>
+                                <th>Вес</th>
+                                <th>Количество</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in waybill.waybillitem_set.all %}
+                                <tr>
+                                    <td>{{ item.cargo.name }}</td>
+                                    <td>{{ item.weight }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="3">Грузы для этой накладной не указаны.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    {% if waybill.additional_info %}
+                        <p><strong>Примечание:</strong> {{ waybill.additional_info }}</p>
+                    {% endif %}
+                </section>
+            {% endfor %}
+        {% else %}
+            <section class="card">
+                <h2>Накладных пока нет</h2>
+                <p class="muted">После сохранения новых накладных они появятся на этой странице.</p>
+            </section>
+        {% endif %}
+    </div>
+</body>
+</html>

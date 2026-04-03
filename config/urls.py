@@ -20,7 +20,7 @@ from users import views as user_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('accounts/login/', user_views.login_page, name='login'),
     path('accounts/', include('django.contrib.auth.urls')),
-    path('register/', include('users.urls')),
-    path('', user_views.home, name='home'),  # корень — главная
+    path('', include('users.urls')),
 ]

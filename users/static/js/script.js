@@ -20,9 +20,9 @@ function renderCargo() {
         cargoDiv.className = 'cargo-item';
         cargoDiv.innerHTML = `
             <div class="cargo-fields">
-                <input type="text" class="cargo-name" placeholder="Наименование груза *" value="${escapeHtml(item.name)}" data-index="${index}" data-field="name">
-                <input type="text" class="cargo-weight" placeholder="Вес (кг/тонны)" value="${escapeHtml(item.weight)}" data-index="${index}" data-field="weight">
-                <input type="text" class="cargo-qty" placeholder="Кол-во / объем" value="${escapeHtml(item.quantity)}" data-index="${index}" data-field="quantity">
+                <input type="text" class="cargo-name" name="cargo_name[]" placeholder="Наименование груза *" value="${escapeHtml(item.name)}" data-index="${index}" data-field="name">
+                <input type="text" class="cargo-weight" name="cargo_weight[]" placeholder="Вес (кг/тонны)" value="${escapeHtml(item.weight)}" data-index="${index}" data-field="weight">
+                <input type="text" class="cargo-qty" name="cargo_quantity[]" placeholder="Кол-во / объем" value="${escapeHtml(item.quantity)}" data-index="${index}" data-field="quantity">
             </div>
             ${cargoItems.length > 1 ? '<button class="remove-cargo" data-index="' + index + '">✖</button>' : ''}
         `;
@@ -81,6 +81,18 @@ function validateForm() {
     if (!hasValidCargo) required.push('Хотя бы один груз (наименование)');
     
     return { valid: required.length === 0, missing: required };
+}
+
+function syncCargoFromDom() {
+    const names = document.querySelectorAll('.cargo-name');
+    const weights = document.querySelectorAll('.cargo-weight');
+    const quantities = document.querySelectorAll('.cargo-qty');
+
+    cargoItems = Array.from(names).map((input, index) => ({
+        name: input.value,
+        weight: weights[index] ? weights[index].value : '',
+        quantity: quantities[index] ? quantities[index].value : ''
+    }));
 }
 
 function resetForm() {
@@ -196,6 +208,60 @@ function printWaybill() {
     printWindow.document.close();
 }
 
+function exportWaybillToCsv() {
+    syncCargoFromDom();
+
+    const validation = validateForm();
+    if (!validation.valid) {
+        showToast('Заполните обязательные поля: ' + validation.missing.join(', '));
+        return;
+    }
+
+    const rows = [
+        ['Поле', 'Значение'],
+        ['Номер накладной', document.getElementById('waybillNumber').value],
+        ['Дата составления', document.getElementById('waybillDate').value],
+        ['Грузоотправитель', document.getElementById('shipperName').value],
+        ['ИНН грузоотправителя', document.getElementById('shipperInn').value],
+        ['Адрес отправителя', document.getElementById('shipperAddress').value],
+        ['Телефон отправителя', document.getElementById('shipperPhone').value],
+        ['Грузополучатель', document.getElementById('consigneeName').value],
+        ['ИНН грузополучателя', document.getElementById('consigneeInn').value],
+        ['Адрес получателя', document.getElementById('consigneeAddress').value],
+        ['Телефон получателя', document.getElementById('consigneePhone').value],
+        ['Транспортное средство', document.getElementById('vehicle').value],
+        ['Водитель', document.getElementById('driver').value],
+        ['Дата погрузки', document.getElementById('loadingDate').value],
+        ['Плановая дата доставки', document.getElementById('deliveryDate').value],
+        ['Дополнительная информация', document.getElementById('additionalInfo').value]
+    ];
+
+    rows.push([]);
+    rows.push(['Груз', 'Вес', 'Количество']);
+
+    cargoItems
+        .filter(item => item.name && item.name.trim())
+        .forEach(item => {
+            rows.push([item.name, item.weight, item.quantity]);
+        });
+
+    const csvContent = rows
+        .map(row => row.map(value => `"${String(value || '').replace(/"/g, '""')}"`).join(';'))
+        .join('\n');
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const number = document.getElementById('waybillNumber').value || 'waybill';
+    link.href = URL.createObjectURL(blob);
+    link.download = `${number}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+
+    showToast('Файл для Excel выгружен', false);
+}
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     const today = new Date().toISOString().split('T')[0];
@@ -207,4 +273,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('addCargoBtn').addEventListener('click', addCargo);
     document.getElementById('resetFormBtn').addEventListener('click', resetForm);
     document.getElementById('printWaybillBtn').addEventListener('click', printWaybill);
+    document.getElementById('exportExcelBtn').addEventListener('click', exportWaybillToCsv);
+
+    const form = document.getElementById('waybillForm');
+    if (form) {
+        form.addEventListener('submit', (event) => {
+            syncCargoFromDom();
+            const validation = validateForm();
+            if (!validation.valid) {
+                event.preventDefault();
+                showToast('Заполните обязательные поля: ' + validation.missing.join(', '));
+            }
+        });
+    }
 });
