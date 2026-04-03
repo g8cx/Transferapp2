@@ -1,0 +1,12 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Главная</title>
+</head>
+<body>
+  <h1>Главная страница</h1>
+  <p>Привет, {{ request.user.get_username }}!</p>
+  <p><a href="{% url 'logout' %}">Выйти</a></p>
+</body>
+</html>

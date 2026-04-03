@@ -1,0 +1,6 @@
+Flask
+Django
+djangorestframework
+requests
+gunicorn
+psycopg2-binary
